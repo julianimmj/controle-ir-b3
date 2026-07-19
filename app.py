@@ -47,11 +47,15 @@ st.markdown("""
         background: rgba(13, 13, 33, 0.6);
         border: 1px solid rgba(124, 77, 255, 0.15);
         border-radius: 16px;
-        padding: 1.5rem;
+        padding: 1.25rem 1.5rem;
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         margin-bottom: 1rem;
+        min-height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     .kpi-label {
         font-size: 0.8rem;
@@ -247,6 +251,7 @@ if menu == "📊 Dashboard":
             <div class="kpi-card">
                 <div class="kpi-label">Patrimônio Investido (Custo)</div>
                 <div class="kpi-value">R$ {total_cost:,.2f}</div>
+                <div class="kpi-diff" style="visibility: hidden;">&nbsp;</div>
             </div>
             """, unsafe_allow_html=True)
         with kpi_cols[1]:
@@ -254,6 +259,7 @@ if menu == "📊 Dashboard":
             <div class="kpi-card">
                 <div class="kpi-label">Valuation da Carteira</div>
                 <div class="kpi-value">R$ {total_value:,.2f}</div>
+                <div class="kpi-diff" style="visibility: hidden;">&nbsp;</div>
             </div>
             """, unsafe_allow_html=True)
         with kpi_cols[2]:
