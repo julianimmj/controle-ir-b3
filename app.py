@@ -286,15 +286,40 @@ if menu == "📊 Dashboard":
         
         # Suggested Actions (Corporate Events check)
         st.subheader("⚡ Sugestões de Eventos Corporativos")
-        st.markdown("Eventos recentes de desdobramentos ou dividendos encontrados no Yahoo Finance:")
+        st.markdown("Eventos recentes de desdobramentos ou dividendos encontrados no Yahoo Finance para seus ativos:")
+        
+        # Load applied proventos/events to exclude them from suggestions
+        applied_proventos = get_proventos(user_id)
+        applied_keys = {
+            (p["ticker"].upper().strip(), p["event_type"].upper().strip(), p["record_date"])
+            for p in applied_proventos
+        }
+        
+        all_sug_events = []
         for p in pos:
             sug_events = suggest_corporate_events(p["ticker"], (datetime.today() - timedelta(days=90)).strftime("%Y-%m-%d"))
             for e in sug_events:
+                key = (e["ticker"].upper().strip(), e["event_type"].upper().strip(), e["record_date"])
+                if key not in applied_keys:
+                    all_sug_events.append(e)
+                    
+        if not all_sug_events:
+            st.info("Nenhum novo evento corporativo sugerido para seus ativos em custódia.")
+        else:
+            # Button to apply all events at once
+            if st.button("⚡ Aplicar Todos os Eventos", key="apply_all_corp_events", type="primary"):
+                for e in all_sug_events:
+                    add_provento(user_id, e['ticker'], e['event_type'], e['amount'], e['record_date'], e['ratio'], e['unit_cost'])
+                trigger_rebuild()
+                st.rerun()
+                
+            st.markdown("---")
+            for e in all_sug_events:
                 col_e1, col_e2 = st.columns([4, 1])
                 with col_e1:
                     st.write(f"🔹 **{e['ticker']}**: {e['description']} em {e['record_date']}")
                 with col_e2:
-                    if st.button("Aplicar Evento", key=f"btn_sug_{e['ticker']}_{e['record_date']}_{e['event_type']}"):
+                    if st.button("Aplicar", key=f"btn_sug_{e['ticker']}_{e['record_date']}_{e['event_type']}"):
                         add_provento(user_id, e['ticker'], e['event_type'], e['amount'], e['record_date'], e['ratio'], e['unit_cost'])
                         trigger_rebuild()
                         st.rerun()
