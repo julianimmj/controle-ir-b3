@@ -219,12 +219,8 @@ if menu == "📊 Dashboard":
             cost_basis = qty * avg_price
             curr_value = qty * curr_price
             
-            # Short position valuation logic
-            if qty < 0:
-                # For short: profit is if current price goes below selling price
-                profit_loss = cost_basis - curr_value
-            else:
-                profit_loss = curr_value - cost_basis
+            # Profit/Loss calculation (works for both long and short since short has negative cost/value)
+            profit_loss = curr_value - cost_basis
                 
             total_cost += cost_basis
             total_value += curr_value
@@ -238,11 +234,11 @@ if menu == "📊 Dashboard":
                 "Preço Atual": f"R$ {curr_price:,.2f}",
                 "Valor Atual": curr_value,
                 "Lucro/Prejuízo": profit_loss,
-                "Retorno %": (profit_loss / cost_basis * 100) if cost_basis != 0 else 0.0
+                "Retorno %": (profit_loss / abs(cost_basis) * 100) if cost_basis != 0 else 0.0
             })
             
         net_profit_loss = total_value - total_cost
-        ret_pct = (net_profit_loss / total_cost * 100) if total_cost != 0 else 0.0
+        ret_pct = (net_profit_loss / abs(total_cost) * 100) if total_cost != 0 else 0.0
         
         # KPI Cards Row
         kpi_cols = st.columns(3)
