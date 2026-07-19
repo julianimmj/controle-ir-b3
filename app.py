@@ -23,10 +23,10 @@ st.set_page_config(
     page_title="Controle de Carteira & IR B3",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"
 )
 
-# Custom Premium Styling
+# Custom Premium Styling & Mobile Responsiveness
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -100,6 +100,44 @@ st.markdown("""
     [data-testid="stSidebar"] {
         background-color: #0c0c1d !important;
         border-right: 1px solid rgba(124, 77, 255, 0.1) !important;
+    }
+
+    /* 📱 Mobile Responsive Media Queries */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            padding-top: 1rem !important;
+        }
+        .kpi-card {
+            padding: 1rem !important;
+            min-height: 110px !important;
+            margin-bottom: 0.6rem !important;
+        }
+        .kpi-value {
+            font-size: 1.4rem !important;
+        }
+        .kpi-label {
+            font-size: 0.75rem !important;
+        }
+        .kpi-diff {
+            font-size: 0.75rem !important;
+        }
+        h1 {
+            font-size: 1.6rem !important;
+        }
+        h2 {
+            font-size: 1.3rem !important;
+        }
+        h3 {
+            font-size: 1.1rem !important;
+        }
+    }
+
+    /* Scrollable tables on mobile screens */
+    .stDataFrame, [data-testid="stTable"], .styled-table {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 </style>
 """, unsafe_allow_html=True)
