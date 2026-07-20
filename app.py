@@ -776,31 +776,7 @@ elif menu == "📝 Lançamentos":
                     if st.button("🗑️ Excluir Evento", use_container_width=True, key=f"btn_edit_prov_del_{selected_prov['id']}"):
                         delete_provento(user_id, selected_prov["id"])
                         trigger_rebuild()
-                        st.rerun()er=ticker,
-                        event_type=event_type,
-                        amount=amount,
-                        record_date=record_date.strftime("%Y-%m-%d"),
-                        ratio=ratio,
-                        unit_cost=unit_cost
-                    )
-                    trigger_rebuild()
-                    st.rerun()
-
-        st.subheader("📋 Registro de Eventos e Proventos")
-        provs = get_proventos(user_id)
-        if not provs:
-            st.info("Nenhum evento corporativo registrado.")
-        else:
-            df_provs = pd.DataFrame(provs)
-            df_provs_disp = df_provs.copy().drop(columns=["user_id"])
-            st.dataframe(df_provs_disp, use_container_width=True, hide_index=True)
-
-            st.markdown("### 🗑️ Excluir Evento")
-            del_p_id = st.number_input("ID do Evento para Exclusão", min_value=1, step=1)
-            if st.button("Excluir Evento", type="primary"):
-                delete_provento(user_id, del_p_id)
-                trigger_rebuild()
-                st.rerun()
+                        st.rerun()
 
 # ─────────────────────────────────────────
 # 3. UPLOAD NOTAS PDF (SINACOR PARSER)
