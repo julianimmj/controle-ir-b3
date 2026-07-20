@@ -366,10 +366,7 @@ if menu == "📊 Dashboard":
             curr_value = qty * curr_price
             
             # Profit/Loss calculation (works for both long and short since short has negative cost/value)
-            if qty < 0:
-                profit_loss = cost_basis - curr_value
-            else:
-                profit_loss = curr_value - cost_basis
+            profit_loss = curr_value - cost_basis
                 
             # Accumulate metrics ONLY for purchased assets (long positions, qty > 0)
             if qty > 0:
