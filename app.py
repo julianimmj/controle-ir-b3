@@ -18,7 +18,7 @@ from src.market_data import get_current_prices, suggest_corporate_events
 init_db()
 
 def st_centered_dataframe(df: pd.DataFrame):
-    """Renders a Streamlit dataframe with all columns centered."""
+    """Renders a Streamlit dataframe with all columns centered and dynamic height to prevent scrollbars."""
     if df.empty:
         st.dataframe(df, use_container_width=True, hide_index=True)
         return
@@ -26,7 +26,9 @@ def st_centered_dataframe(df: pd.DataFrame):
         col: st.column_config.Column(alignment="center")
         for col in df.columns
     }
-    st.dataframe(df, use_container_width=True, hide_index=True, column_config=config)
+    # Calculate height: header (36px) + each row (35px) + border padding (10px)
+    dyn_height = (len(df) + 1) * 35 + 10
+    st.dataframe(df, use_container_width=True, hide_index=True, column_config=config, height=dyn_height)
 
 # ─────────────────────────────────────────
 # Page Setup
