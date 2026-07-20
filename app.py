@@ -17,6 +17,17 @@ from src.market_data import get_current_prices, suggest_corporate_events
 # Initialize Database
 init_db()
 
+def st_centered_dataframe(df: pd.DataFrame):
+    """Renders a Streamlit dataframe with all columns centered."""
+    if df.empty:
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        return
+    config = {
+        col: st.column_config.Column(alignment="center")
+        for col in df.columns
+    }
+    st.dataframe(df, use_container_width=True, hide_index=True, column_config=config)
+
 # ─────────────────────────────────────────
 # Page Setup
 # ─────────────────────────────────────────
@@ -538,9 +549,7 @@ if menu == "📊 Dashboard":
         df_disp["Lucro/Prejuízo"] = df_disp["Lucro/Prejuízo"].apply(lambda x: f"R$ {x:,.2f}")
         df_disp["Retorno %"] = df_disp["Retorno %"].apply(lambda x: f"{x:.2f}%")
         
-        # Centralize text using style and adjust width
-        df_styled = df_disp.style.set_properties(**{'text-align': 'center'})
-        st.dataframe(df_styled, use_container_width=True, hide_index=True)
+        st_centered_dataframe(df_disp)
         
         # Auto-applied Corporate Actions Informational Panel
         st.subheader("⚡ Eventos Corporativos Aplicados Automaticamente")
@@ -632,8 +641,7 @@ elif menu == "📝 Lançamentos":
         else:
             df_txs = pd.DataFrame(txs)
             df_txs_disp = df_txs.copy().drop(columns=["user_id"])
-            df_styled = df_txs_disp.style.set_properties(**{'text-align': 'center'})
-            st.dataframe(df_styled, use_container_width=True, hide_index=True)
+            st_centered_dataframe(df_txs_disp)
             
             # Row correction and deletion management
             st.markdown("### 🛠️ Corrigir ou Excluir Lançamentos")
@@ -727,8 +735,7 @@ elif menu == "📝 Lançamentos":
         else:
             df_provs = pd.DataFrame(provs)
             df_provs_disp = df_provs.copy().drop(columns=["user_id"])
-            df_styled_p = df_provs_disp.style.set_properties(**{'text-align': 'center'})
-            st.dataframe(df_styled_p, use_container_width=True, hide_index=True)
+            st_centered_dataframe(df_provs_disp)
             
             # Row correction and deletion management for proventos
             st.markdown("### 🛠️ Corrigir ou Excluir Eventos")
@@ -804,8 +811,7 @@ elif menu == "📂 Upload Notas PDF":
                     df_parsed_t["fees"] = df_parsed_t["fees"].apply(lambda x: f"R$ {x:.2f}")
                     df_parsed_t["price"] = df_parsed_t["price"].apply(lambda x: f"R$ {x:.2f}")
                     df_parsed_t["total"] = df_parsed_t["total"].apply(lambda x: f"R$ {x:.2f}")
-                    df_styled_u = df_parsed_t.style.set_properties(**{'text-align': 'center'})
-                    st.dataframe(df_styled_u, use_container_width=True, hide_index=True)
+                    st_centered_dataframe(df_parsed_t)
                 else:
                     st.warning("Nenhuma transação identificada na nota.")
                 st.markdown("---")
@@ -956,8 +962,7 @@ elif menu == "📅 Declaração IRPF":
                     "Preço Médio": f"R$ {avg_p:,.2f}",
                     "Situação em 31/12 (Custo Total)": f"R$ {cost_basis:,.2f}"
                 })
-            df_styled_c = pd.DataFrame(cust_rows).style.set_properties(**{'text-align': 'center'})
-            st.dataframe(df_styled_c, use_container_width=True, hide_index=True)
+            st_centered_dataframe(pd.DataFrame(cust_rows))
             
         st.markdown("---")
         
@@ -982,7 +987,6 @@ elif menu == "📅 Declaração IRPF":
             })
             
         if var_rows:
-            df_styled_v = pd.DataFrame(var_rows).style.set_properties(**{'text-align': 'center'})
-            st.dataframe(df_styled_v, use_container_width=True, hide_index=True)
+            st_centered_dataframe(pd.DataFrame(var_rows))
         else:
             st.info(f"Nenhuma apuração mensal disponível para o ano fiscal {selected_year}.")
