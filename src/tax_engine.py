@@ -25,10 +25,17 @@ def compute_portfolio(user_id: int):
     clear_custody(user_id)
 
     if not txs:
-        return
+        return 0.0, {}
 
     # Data structures for simulation
     custody_state = {} # ticker -> {qty, avg_price, market_type}
+    
+    # Financial indicators tracking
+    running_realized_profit = 0.0
+    running_cash_balance = 0.0
+    min_cash_balance_seen = 0.0
+    historical_monthly_raw = {}
+    last_month_seen = None
     
     # Monthly aggregates
     # month_str (YYYY-MM) -> metrics
@@ -57,6 +64,24 @@ def compute_portfolio(user_id: int):
     for date_str in sorted(date_groups.keys()):
         group = date_groups[date_str]
         month_str = date_str[:7] # YYYY-MM
+
+        # Monthly state recording on month transition
+        if last_month_seen and last_month_seen != month_str:
+            historical_monthly_raw[last_month_seen] = {
+                "custody": {t: dict(c) for t, c in custody_state.items() if c["qty"] != 0},
+                "realized_profit_accum": running_realized_profit,
+                "cash_balance": running_cash_balance,
+                "min_cash_balance": min_cash_balance_seen
+            }
+        last_month_seen = month_str
+
+        # Update cash balance for transactions on this date
+        for tx in group:
+            if tx['operation_type'] == 'COMPRA':
+                running_cash_balance -= (tx['quantity'] * tx['price'] + tx['fees'])
+            elif tx['operation_type'] == 'VENDA':
+                running_cash_balance += (tx['quantity'] * tx['price'] - tx['fees'])
+        min_cash_balance_seen = min(min_cash_balance_seen, running_cash_balance)
 
         # Group by ticker and broker to identify Day Trades
         group_by_tb = defaultdict(list)
@@ -87,6 +112,7 @@ def compute_portfolio(user_id: int):
 
                 # Day Trade Net Profit
                 dt_profit = dt_qty * (avg_sell_price - avg_buy_price) - (buy_dt_fees + sell_dt_fees)
+                running_realized_profit += dt_profit
 
                 # Day trade IRRF (Dedo-Duro: 1% on profit)
                 if dt_profit > 0:
@@ -129,6 +155,7 @@ def compute_portfolio(user_id: int):
                     cost_to_cover = covered_qty * avg_buy_price + prop_fees
                     # Short profit: Sell price (stored as avg_price) - Buy cost
                     st_profit = covered_qty * current_avg - cost_to_cover
+                    running_realized_profit += st_profit
 
                     if market_type == 'FII':
                         if st_profit >= 0:
@@ -185,6 +212,7 @@ def compute_portfolio(user_id: int):
                     
                     revenue_net = sold_qty * avg_sell_price - prop_fees
                     st_profit = revenue_net - (sold_qty * current_avg)
+                    running_realized_profit += st_profit
 
                     if market_type == 'FII':
                         if st_profit >= 0:
@@ -227,6 +255,9 @@ def compute_portfolio(user_id: int):
             e_type = p["event_type"]
             ratio = p["ratio"]
             unit_cost = p["unit_cost"]
+
+            if e_type in ('DIVIDENDO', 'JCP'):
+                running_cash_balance += p['amount']
 
             if t_ticker in custody_state and custody_state[t_ticker]["qty"] != 0:
                 pos = custody_state[t_ticker]
@@ -368,3 +399,14 @@ def compute_portfolio(user_id: int):
             irrf_dedo_duro=round(total_irrf, 2),
             paid=existing_paid
         )
+
+    # Save final snapshot
+    if last_month_seen:
+        historical_monthly_raw[last_month_seen] = {
+            "custody": {t: dict(c) for t, c in custody_state.items() if c["qty"] != 0},
+            "realized_profit_accum": running_realized_profit,
+            "cash_balance": running_cash_balance,
+            "min_cash_balance": min_cash_balance_seen
+        }
+
+    return running_realized_profit, historical_monthly_raw

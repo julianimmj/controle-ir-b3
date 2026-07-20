@@ -388,3 +388,27 @@ def set_darf_paid_status(user_id: int, month: str, paid: int):
     cursor.execute("UPDATE darfs SET paid = ? WHERE user_id = ? AND month = ?;", (paid, user_id, month))
     conn.commit()
     conn.close()
+
+def update_transaction(user_id: int, tx_id: int, ticker: str, operation_type: str, quantity: int, price: float, fees: float, trade_date: str, market_type: str, broker: str, is_day_trade: int):
+    """Update a past manual transaction record."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE transactions
+        SET ticker = ?, operation_type = ?, quantity = ?, price = ?, fees = ?, trade_date = ?, market_type = ?, broker = ?, is_day_trade = ?
+        WHERE id = ? AND user_id = ?;
+    """, (ticker.upper().strip(), operation_type, quantity, price, fees, trade_date, market_type, broker, is_day_trade, tx_id, user_id))
+    conn.commit()
+    conn.close()
+
+def update_provento(user_id: int, prov_id: int, ticker: str, event_type: str, amount: float, record_date: str, ratio: float, unit_cost: float):
+    """Update a past corporate event / provento record."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE proventos
+        SET ticker = ?, event_type = ?, amount = ?, record_date = ?, ratio = ?, unit_cost = ?
+        WHERE id = ? AND user_id = ?;
+    """, (ticker.upper().strip(), event_type, amount, record_date, ratio, unit_cost, prov_id, user_id))
+    conn.commit()
+    conn.close()
