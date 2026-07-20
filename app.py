@@ -552,7 +552,7 @@ if menu == "📊 Dashboard":
         
         # Auto-applied Corporate Actions Informational Panel
         st.subheader("⚡ Eventos Corporativos Aplicados Automaticamente")
-        st.markdown("<p style='font-size:0.9rem; color:rgba(255,255,255,0.6); margin-top:-0.5rem;'>Os eventos corporativos e proventos do Yahoo Finance abaixo são aplicados à custódia de forma 100% automatizada e sem necessidade de clique:</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:0.9rem; color:rgba(255,255,255,0.6); margin-top:-0.5rem;'>Os eventos corporativos e proventos do Yahoo Finance abaixo são aplicados à custódia de forma 100% automatizada e sem necessidade de atualização manual :</p>", unsafe_allow_html=True)
         
         applied_provs = get_proventos(user_id)
         if not applied_provs:
