@@ -60,7 +60,6 @@ def parse_sinacor_pdf(pdf_file_path_or_bytes) -> dict | None:
     # Search for trade date (Data Pregão: DD/MM/YYYY or similar)
     date_matches = re.findall(r'(?:data\s+preg[ãa]o|data\s+do\s+preg[ãa]o|preg[ãa]o)[:\s]+(\d{2}/\d{2}/\d{4})', full_text, re.IGNORECASE)
     if date_matches:
-        trade_date = datetime.strptime(date_matches[0], "%d/%m/%m").strftime("%Y-%m-%d") # Wait, month is %m, let's use %d/%m/%Y
         trade_date = datetime.strptime(date_matches[0], "%d/%m/%Y").strftime("%Y-%m-%d")
     else:
         # Fallback date search
@@ -103,7 +102,7 @@ def parse_sinacor_pdf(pdf_file_path_or_bytes) -> dict | None:
     # Group 6: Total (e.g. 2.540,00)
     # Group 7: D/C
     row_pattern = re.compile(
-        r'\b([CV])\s+(VISTA|FRACIONARIO|OP[CÇ][AÃ]O|EXERC[IÍ]CIO)\s+([A-Z]{4}\d{1,2}|[A-Z]{5}\d{3})\b.*?(\d+[\d\.]*)\s+(\d+,\d{2})\s+(\d+[\d\.]*,?\d{2})\s+([DC])',
+        r'\b([CV])\s+(VISTA|FRACIONARIO|OP[CÇ][AÃ]O|EXERC[IÍ]CIO)\s+([A-Z]{4}\d{1,2}|[A-Z]{5}\d{3})\b.*?(\d+[\d\.]*)\s+([\d\.]+,\d{2})\s+([\d\.]+,\d{2})\s+([DC])',
         re.IGNORECASE
     )
 
@@ -127,11 +126,21 @@ def parse_sinacor_pdf(pdf_file_path_or_bytes) -> dict | None:
             # (FII is handled under VISTA rules in yfinance, but tax-wise we need to separate FII).
             # We can identify FII if the name contains "FII" or by typical FII tickers.
             # Let's do a basic ticker classification:
-            if ticker.endswith("11") and ("FII" in line.upper() or "RECT" in line.upper() or "KNIP" in line.upper() or "MXRF" in line.upper() or "HGLG" in line.upper()):
+            # Known ETFs that end in 11 but are NOT FIIs
+            ETFS_NOT_FII = {
+                'BOVA11', 'IVVB11', 'SMAL11', 'HASH11', 'QBTC11', 'QETH11',
+                'DIVO11', 'BOVV11', 'PIBB11', 'BRAX11', 'ECOO11', 'FIND11',
+                'GOVE11', 'ISUS11', 'MATB11', 'IMAB11', 'FIXA11', 'IRFM11',
+                'SMAC11', 'GOLD11', 'SPXI11', 'NASD11', 'EURP11', 'ACWI11',
+                'XINA11', 'TECK11', '5GTK11', 'JOGO11', 'GURU11', 'SHOT11',
+            }
+            if ticker.endswith("11") and ticker not in ETFS_NOT_FII:
+                # Tickers ending in 11 are almost always FIIs
+                # (ETFs ending in 11 are explicitly excluded above)
                 mkt_type = "FII"
-            elif ticker.endswith("34"):
+            elif ticker.endswith("34") or ticker.endswith("35") or ticker.endswith("39"):
                 mkt_type = "BDR"
-            elif len(ticker) == 8: # e.g. PETRI240
+            elif len(ticker) >= 7:  # e.g. PETRH320 (options)
                 mkt_type = "OPCOES"
             elif "OPC" in mkt_type_raw:
                 mkt_type = "OPCOES"

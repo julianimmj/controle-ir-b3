@@ -40,6 +40,7 @@ def compute_portfolio(user_id: int):
     # Monthly aggregates
     # month_str (YYYY-MM) -> metrics
     monthly_sales = defaultdict(lambda: {"VISTA": 0.0, "BDR": 0.0, "OPCOES": 0.0, "FII": 0.0})
+    monthly_dt_sales = defaultdict(float)  # Day trade sell volume per month
     monthly_profits = defaultdict(lambda: {
         "common_acoes": 0.0,  # potentially exempt
         "common_other": 0.0,  # BDR, OPCOES (never exempt)
@@ -110,6 +111,13 @@ def compute_portfolio(user_id: int):
                 buy_dt_fees = total_buy_fees * (dt_qty / total_buy_qty)
                 sell_dt_fees = total_sell_fees * (dt_qty / total_sell_qty)
 
+                # Track day trade sell volume (counts toward 20k threshold)
+                dt_sell_value = dt_qty * avg_sell_price
+                monthly_dt_sales[month_str] += dt_sell_value
+                # Also add DT sell volume to monthly_sales for VISTA threshold
+                mtype = market_type if market_type in ('VISTA', 'BDR', 'OPCOES', 'FII') else 'VISTA'
+                monthly_sales[month_str][mtype] += dt_sell_value
+
                 # Day Trade Net Profit
                 dt_profit = dt_qty * (avg_sell_price - avg_buy_price) - (buy_dt_fees + sell_dt_fees)
                 running_realized_profit += dt_profit
@@ -130,6 +138,9 @@ def compute_portfolio(user_id: int):
             swing_sell_qty = total_sell_qty - dt_qty
 
             market_type = sub_group[0]['market_type']
+            # Normalize ACOES to VISTA for consistent key usage
+            if market_type == 'ACOES':
+                market_type = 'VISTA'
 
             # 1. Process Swing Trade Purchase (Long expansion or Short cover)
             if swing_buy_qty > 0:
@@ -386,11 +397,13 @@ def compute_portfolio(user_id: int):
                 existing_paid = d["paid"]
                 break
 
+        dt_sales_month = monthly_dt_sales[month]
+
         update_darf_record(
             user_id=user_id,
             month=month,
-            swing_trade_sales=round(acoes_sales_volume + sales["BDR"] + sales["OPCOES"], 2),
-            day_trade_sales=0.0,
+            swing_trade_sales=round(acoes_sales_volume + sales["BDR"] + sales["OPCOES"] - dt_sales_month, 2),
+            day_trade_sales=round(dt_sales_month, 2),
             fii_sales=round(sales["FII"], 2),
             swing_trade_profit=round(taxable_common_profit, 2),
             day_trade_profit=round(dt_profit_month, 2),

@@ -940,28 +940,66 @@ elif menu == "📅 Declaração IRPF":
         st.subheader("💼 Ficha de Bens e Direitos (B3)")
         st.markdown(f"Custódia em **31/12/{selected_year}** com quantidade e custo médio histórico (com taxas inclusas).")
         
-        cust = get_custody(user_id)
-        if not cust:
-            st.info("Nenhum ativo em custódia no final do ano.")
+        # Use historical monthly snapshot for 31/12 (YYYY-12) when available
+        hist_data = st.session_state.historical_monthly_data
+        dec_month_key = f"{selected_year}-12"
+        current_year = datetime.today().strftime("%Y")
+        
+        # Try to get custody snapshot from December of the selected year
+        dec_snapshot = None
+        if hist_data and dec_month_key in hist_data:
+            dec_snapshot = hist_data[dec_month_key].get("custody", {})
+        elif hist_data and selected_year != current_year:
+            # If December snapshot doesn't exist, find the last month of the year that exists
+            year_months = sorted([m for m in hist_data.keys() if m.startswith(selected_year)])
+            if year_months:
+                last_month_of_year = year_months[-1]
+                dec_snapshot = hist_data[last_month_of_year].get("custody", {})
+        
+        if dec_snapshot is not None:
+            # Use historical snapshot for the selected year
+            if not dec_snapshot:
+                st.info(f"Nenhum ativo em custódia em 31/12/{selected_year}.")
+            else:
+                cust_rows = []
+                for ticker, pos_data in dec_snapshot.items():
+                    qty = pos_data["qty"]
+                    avg_p = pos_data["avg_price"]
+                    mkt = pos_data.get("market_type", "VISTA")
+                    cost_basis = qty * avg_p
+                    group_code = "03 (Participações societárias)" if mkt != "FII" else "07 (Fundos)"
+                    
+                    cust_rows.append({
+                        "Código": group_code,
+                        "Ativo": ticker,
+                        "Quantidade": qty,
+                        "Preço Médio": f"R$ {avg_p:,.2f}",
+                        "Situação em 31/12 (Custo Total)": f"R$ {cost_basis:,.2f}"
+                    })
+                st_centered_dataframe(pd.DataFrame(cust_rows))
         else:
-            cust_rows = []
-            for c in cust:
-                ticker = c["ticker"]
-                qty = c["quantity"]
-                avg_p = c["average_price"]
-                cost_basis = qty * avg_p
-                
-                # FII mapping or stocks group codes
-                group_code = "03 (Participações societárias)" if c["market_type"] != "FII" else "07 (Fundos)"
-                
-                cust_rows.append({
-                    "Código": group_code,
-                    "Ativo": ticker,
-                    "Quantidade": qty,
-                    "Preço Médio": f"R$ {avg_p:,.2f}",
-                    "Situação em 31/12 (Custo Total)": f"R$ {cost_basis:,.2f}"
-                })
-            st_centered_dataframe(pd.DataFrame(cust_rows))
+            # Fallback: current custody (only when selected_year == current_year and no snapshot)
+            cust = get_custody(user_id)
+            if not cust:
+                st.info(f"Nenhum ativo em custódia em 31/12/{selected_year}.")
+            else:
+                st.caption(f"⚠️ Exibindo custódia atual (snapshot de 31/12/{selected_year} não disponível).")
+                cust_rows = []
+                for c in cust:
+                    ticker = c["ticker"]
+                    qty = c["quantity"]
+                    avg_p = c["average_price"]
+                    cost_basis = qty * avg_p
+                    group_code = "03 (Participações societárias)" if c["market_type"] != "FII" else "07 (Fundos)"
+                    
+                    cust_rows.append({
+                        "Código": group_code,
+                        "Ativo": ticker,
+                        "Quantidade": qty,
+                        "Preço Médio": f"R$ {avg_p:,.2f}",
+                        "Situação em 31/12 (Custo Total)": f"R$ {cost_basis:,.2f}"
+                    })
+                st_centered_dataframe(pd.DataFrame(cust_rows))
             
         st.markdown("---")
         

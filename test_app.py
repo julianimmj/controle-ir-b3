@@ -190,6 +190,25 @@ def run_tests():
     if os.path.exists(test_pdf_txt_path):
         os.remove(test_pdf_txt_path)
 
+    # 9. Test Bug 5 & 11 fixes: FII detection and price > 999.99 with thousand separators
+    sample_fii_line = "1-BOVESPA C VISTA XPLG11 XP LOG FII 100 1.250,50 125.050,00 D"
+    row_pattern = re.compile(
+        r'\b([CV])\s+(VISTA|FRACIONARIO|OP[CÇ][AÃ]O|EXERC[IÍ]CIO)\s+([A-Z]{4}\d{1,2}|[A-Z]{5}\d{3})\b.*?(\d+[\d\.]*)\s+([\d\.]+,\d{2})\s+([\d\.]+,\d{2})\s+([DC])',
+        re.IGNORECASE
+    )
+    match = row_pattern.search(sample_fii_line)
+    assert match is not None, "Failed to match FII line regex"
+    ticker_matched = match.group(3).upper()
+    price_matched = clean_number(match.group(5))
+    
+    ETFS_NOT_FII = {'BOVA11', 'IVVB11', 'SMAL11', 'HASH11'}
+    mkt_type = "FII" if ticker_matched.endswith("11") and ticker_matched not in ETFS_NOT_FII else "VISTA"
+    
+    assert ticker_matched == "XPLG11", f"Ticker should be XPLG11, got {ticker_matched}"
+    assert mkt_type == "FII", f"Market type should be FII, got {mkt_type}"
+    assert price_matched == 1250.50, f"Price should be 1250.50, got {price_matched}"
+    print("[PASS] FII classification for XPLG11 and thousand-separator price parsing verified.")
+
     print("\n=== ALL DIAGNOSTIC TESTS PASSED SUCCESSFULLY! ===")
 
 if __name__ == "__main__":

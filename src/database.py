@@ -211,7 +211,7 @@ def delete_transaction(user_id: int, transaction_id: int):
     conn.commit()
     conn.close()
 
-def update_transaction(user_id: int, transaction_id: int, ticker: str, operation_type: str, 
+def update_transaction(user_id: int, tx_id: int, ticker: str, operation_type: str, 
                        quantity: int, price: float, fees: float, trade_date: str, 
                        market_type: str, note_number: str = None, broker: str = None, is_day_trade: int = 0):
     """Update an existing transaction."""
@@ -226,7 +226,7 @@ def update_transaction(user_id: int, transaction_id: int, ticker: str, operation
         SET ticker = ?, operation_type = ?, quantity = ?, price = ?, fees = ?, trade_date = ?, 
             market_type = ?, note_number = ?, broker = ?, is_day_trade = ?
         WHERE id = ? AND user_id = ?;
-    """, (ticker, operation_type, quantity, price, fees, trade_date, market_type, note_number, broker, is_day_trade, transaction_id, user_id))
+    """, (ticker, operation_type, quantity, price, fees, trade_date, market_type, note_number, broker, is_day_trade, tx_id, user_id))
     conn.commit()
     conn.close()
 
@@ -389,17 +389,8 @@ def set_darf_paid_status(user_id: int, month: str, paid: int):
     conn.commit()
     conn.close()
 
-def update_transaction(user_id: int, tx_id: int, ticker: str, operation_type: str, quantity: int, price: float, fees: float, trade_date: str, market_type: str, broker: str, is_day_trade: int):
-    """Update a past manual transaction record."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE transactions
-        SET ticker = ?, operation_type = ?, quantity = ?, price = ?, fees = ?, trade_date = ?, market_type = ?, broker = ?, is_day_trade = ?
-        WHERE id = ? AND user_id = ?;
-    """, (ticker.upper().strip(), operation_type, quantity, price, fees, trade_date, market_type, broker, is_day_trade, tx_id, user_id))
-    conn.commit()
-    conn.close()
+
+
 
 def update_provento(user_id: int, prov_id: int, ticker: str, event_type: str, amount: float, record_date: str, ratio: float, unit_cost: float):
     """Update a past corporate event / provento record."""
