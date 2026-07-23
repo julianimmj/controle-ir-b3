@@ -8,7 +8,10 @@ def format_yf_ticker(ticker: str) -> str:
     ticker = ticker.upper().strip()
     if ".SA" in ticker:
         return ticker
-    # Options usually have 8 characters (e.g. PETRI240), we don't query them on yf
+    # Strip fractional suffix 'F' if present (e.g. PETR4F -> PETR4)
+    if len(ticker) == 6 and ticker.endswith("F") and ticker[4].isdigit():
+        ticker = ticker[:5]
+    # Options usually have 7-8 characters (e.g. PETRH320), we don't query them on yf
     if len(ticker) in [5, 6]:
         return f"{ticker}.SA"
     return ticker
@@ -247,12 +250,14 @@ def get_ticker_historical_monthly_closes(tickers: tuple, start_date_str: str, en
 
     for t in tickers:
         closes[t] = {}
-        # Ignore custom codes or short option names
-        if len(t) > 7 or any(c.isdigit() for c in t) and not t.endswith('3') and not t.endswith('4') and not t.endswith('11') and not t.endswith('34'):
+        # Ignore custom codes or option names (options have length >= 7 and end in strike digits)
+        valid_b3_suffixes = ('3', '4', '5', '6', '11', '32', '33', '34', '35', '39')
+        clean_t = t[:5] if (len(t) == 6 and t.endswith("F") and t[4].isdigit()) else t
+        if len(clean_t) > 6 or (any(c.isdigit() for c in clean_t) and not any(clean_t.endswith(suf) for suf in valid_b3_suffixes)):
             # Probably an option or something invalid for standard monthly yahoo quotes
             continue
             
-        yf_ticker = f"{t}.SA"
+        yf_ticker = f"{clean_t}.SA"
         try:
             data = yf.download(yf_ticker, start=start_fmt, end=end_fmt, interval="1mo", progress=False)
             if not data.empty:

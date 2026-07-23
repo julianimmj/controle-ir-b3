@@ -111,12 +111,9 @@ def compute_portfolio(user_id: int):
                 buy_dt_fees = total_buy_fees * (dt_qty / total_buy_qty)
                 sell_dt_fees = total_sell_fees * (dt_qty / total_sell_qty)
 
-                # Track day trade sell volume (counts toward 20k threshold)
+                # Track day trade sell volume (for DARF reporting)
                 dt_sell_value = dt_qty * avg_sell_price
                 monthly_dt_sales[month_str] += dt_sell_value
-                # Also add DT sell volume to monthly_sales for VISTA threshold
-                mtype = market_type if market_type in ('VISTA', 'BDR', 'OPCOES', 'FII') else 'VISTA'
-                monthly_sales[month_str][mtype] += dt_sell_value
 
                 # Day Trade Net Profit
                 dt_profit = dt_qty * (avg_sell_price - avg_buy_price) - (buy_dt_fees + sell_dt_fees)
@@ -402,7 +399,7 @@ def compute_portfolio(user_id: int):
         update_darf_record(
             user_id=user_id,
             month=month,
-            swing_trade_sales=round(acoes_sales_volume + sales["BDR"] + sales["OPCOES"] - dt_sales_month, 2),
+            swing_trade_sales=round(acoes_sales_volume + sales["BDR"] + sales["OPCOES"], 2),
             day_trade_sales=round(dt_sales_month, 2),
             fii_sales=round(sales["FII"], 2),
             swing_trade_profit=round(taxable_common_profit, 2),
