@@ -2,8 +2,8 @@ name: Manter Streamlit Ativo
 
 on:
   schedule:
-    # Executa a cada 2 dias às 12:00 UTC
-    - cron: '0 12 */2 * *'
+    # Executa a cada 8 horas (00:00, 08:00, 16:00 UTC)
+    - cron: '0 */8 * * *'
   workflow_dispatch: # Permite disparar manualmente pela aba 'Actions' no GitHub
 
 jobs:
