@@ -1,0 +1,58 @@
+name: Manter Streamlit Ativo
+
+on:
+  schedule:
+    # Executa a cada 2 dias às 12:00 UTC
+    - cron: '0 12 */2 * *'
+  workflow_dispatch: # Permite disparar manualmente pela aba 'Actions' no GitHub
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Instalar Playwright
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright
+          playwright install chromium
+
+      - name: Acessar e Acordar a Aplicação
+        run: |
+          python -c "
+          from playwright.sync_api import sync_playwright
+          import time
+
+          URLS = ['https://positionandtax.streamlit.app/']
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              for url in URLS:
+                  page = browser.new_page()
+                  print(f'Acessando: {url}')
+                  try:
+                      page.goto(url, timeout=60000)
+                      time.sleep(5)
+
+                      button = page.query_selector('button:has-text(\"Yes, get this app back up!\")') or page.query_selector('button:has-text(\"Wake up\")') or page.query_selector('button:has-text(\"Get this app back up\")')
+                      
+                      if button:
+                          print('Aplicação encontrada em repouso. Clicando para reativar...')
+                          button.click()
+                          time.sleep(20)
+                          print('Botão pressionado com sucesso!')
+                      else:
+                          print('Aplicação já está ativa e recebeu a visita!')
+                  except Exception as e:
+                      print(f'Erro ao acessar {url}: {e}')
+                  finally:
+                      page.close()
+              browser.close()
+          "
