@@ -26,7 +26,7 @@ jobs:
 
       - name: Acessar e Acordar a Aplicação
         run: |
-          python -c "
+          python - << 'EOF'
           from playwright.sync_api import sync_playwright
           import time
 
@@ -41,7 +41,10 @@ jobs:
                       page.goto(url, timeout=60000)
                       time.sleep(5)
 
-                      button = page.query_selector('button:has-text(\"Yes, get this app back up!\")') or page.query_selector('button:has-text(\"Wake up\")') or page.query_selector('button:has-text(\"Get this app back up\")')
+                      b1 = page.query_selector('button:has-text("Yes, get this app back up!")')
+                      b2 = page.query_selector('button:has-text("Wake up")')
+                      b3 = page.query_selector('button:has-text("Get this app back up")')
+                      button = b1 or b2 or b3
                       
                       if button:
                           print('Aplicação encontrada em repouso. Clicando para reativar...')
@@ -55,4 +58,4 @@ jobs:
                   finally:
                       page.close()
               browser.close()
-          "
+          EOF
