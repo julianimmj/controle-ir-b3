@@ -2,23 +2,38 @@ name: Manter Streamlit Ativo
 
 on:
   schedule:
+    # Executa a cada 6 horas (00:00, 06:00, 12:00, 18:00 UTC)
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Ping app
+      - name: Ping Streamlit App
         run: |
-          echo "Acessando: https://positionandtax.streamlit.app/"
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 120 --retry 3 --retry-delay 10 "https://positionandtax.streamlit.app/")
-          echo "Status HTTP: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
-            echo "Aplicacao ativa e respondendo!"
-          else
-            echo "Aplicacao pode estar em repouso (status $HTTP_STATUS). Tentando wake-up..."
-            curl -s -L --max-time 180 --retry 2 "https://positionandtax.streamlit.app/" > /dev/null 2>&1
-            echo "Requisicao de wake-up enviada."
-          fi
+          python - << 'EOF'
+          import urllib.request
+
+          urls = ['https://positionandtax.streamlit.app/']
+
+          class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          opener = urllib.request.build_opener(NoRedirectHandler)
+
+          for url in urls:
+              print(f"Acessando: {url}")
+              try:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                  resp = opener.open(req, timeout=30)
+                  print(f" -> Sucesso (HTTP {resp.getcode()})")
+              except urllib.error.HTTPError as e:
+                  print(f" -> Sucesso (HTTP {e.code} - Wake-up enviado)")
+              except Exception as e:
+                  print(f" -> Aviso: {e}")
+
+          print("Ping de atividade concluido com sucesso.")
+          EOF
